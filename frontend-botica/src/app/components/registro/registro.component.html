@@ -1,0 +1,51 @@
+<div class="container mt-5">
+  <div class="card shadow" style="max-width: 500px; margin: auto">
+    <div class="card-header bg-dark text-white text-center">
+      <h3>
+        {{ esEdicion ? "Modificar Empleado" : "Registrar Nuevo Empleado" }}
+      </h3>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Nombre Completo</label>
+        <input
+          type="text"
+          [(ngModel)]="usuario.nombre_completo"
+          class="form-control"
+          placeholder="Ej: Ronald ..."
+        />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Correo Electrónico</label>
+        <input
+          type="email"
+          [(ngModel)]="usuario.email"
+          class="form-control"
+          placeholder="usuario@botica.com"
+        />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Contraseña</label>
+        <input
+          type="password"
+          class="form-control"
+          [(ngModel)]="usuario.password_hash"
+          [disabled]="esEdicion"
+          placeholder="{{
+            esEdicion ? 'No se puede modificar aquí' : 'Escriba la contraseña'
+          }}"
+        />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Rol del Usuario</label>
+        <select class="form-select" [(ngModel)]="usuario.rol.rol_id">
+          <option [value]="1">Administrador</option>
+          <option [value]="2">Vendedor</option>
+        </select>
+      </div>
+      <button class="btn btn-primary w-100" (click)="registrar()">
+        {{ esEdicion ? "Guardar Cambios" : "Guardar en Base de Datos" }}
+      </button>
+    </div>
+  </div>
+</div>

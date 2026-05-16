@@ -1,0 +1,46 @@
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Catálogo de Productos (Medicamentos)</h2>
+    <button class="btn btn-success" routerLink="/productos/nuevo">+ Registrar Producto</button>
+  </div>
+
+  <div class="table-responsive shadow rounded">
+    <table class="table table-striped table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Imagen</th>
+          <th>Nombre Comercial</th>
+          <th>Nombre Genérico</th>
+          <th>Presentación</th>
+          <th>Categoría</th>
+          <th class="text-end">Precio Unitario</th>
+          <th class="text-center">Stock Mínimo</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="productos.length === 0">
+          <td colspan="8" class="text-center text-muted py-4">
+            No hay productos registrados en el catálogo.
+          </td>
+        </tr>
+
+        <tr *ngFor="let p of productos">
+          <td>
+            <img [src]="p.imagenUrl || 'assets/no-image.png'" alt="Producto" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+          </td>
+          <td><strong>{{ p.nombreComercial }}</strong></td>
+          <td class="text-muted"><em>{{ p.nombreGenerico || 'N/A' }}</em></td>
+          <td><span class="badge bg-secondary">{{ p.presentacion }}</span></td>
+          <td>{{ p.categoria?.nombre }}</td>
+          <td class="text-end fw-bold text-success">{{ p.precioVentaUnitario | currency:'PEN':'S/. ' }}</td>
+          <td class="text-center">{{ p.stockMinimo || 0 }} u.</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-warning me-2" [routerLink]="['/productos/editar', p.producto_id]">Editar</button>
+            <button class="btn btn-sm btn-danger" (click)="eliminar(p.producto_id)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
