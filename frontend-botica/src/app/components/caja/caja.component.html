@@ -1,0 +1,105 @@
+<div class="container-fluid mt-4 mb-5">
+  <h2 class="mb-4 fw-bold"><i class="bi bi-cash-coin"></i> Arqueo de Caja del Día</h2>
+
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card bg-success text-white shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-uppercase fw-bold opacity-75">Ingresos (Ventas + Apertura)</h6>
+          <h2 class="mb-0 fw-bold">{{ resumen.ingresos | currency:'PEN':'S/. ' }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-danger text-white shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-uppercase fw-bold opacity-75">Egresos (Gastos + Devoluciones)</h6>
+          <h2 class="mb-0 fw-bold">{{ resumen.egresos | currency:'PEN':'S/. ' }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-primary text-white shadow h-100 border-0">
+        <div class="card-body">
+          <h6 class="card-title text-uppercase fw-bold text-light">Saldo Físico en Caja</h6>
+          <h1 class="mb-0 fw-bold display-6">{{ resumen.saldoCaja | currency:'PEN':'S/. ' }}</h1>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white fw-bold">
+          Nuevo Movimiento Manual
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Tipo de Movimiento</label>
+            <select class="form-select" [(ngModel)]="nuevoMovimiento.tipoMovId">
+              <option [value]="1">🟢 APERTURA DE CAJA (Ingreso)</option>
+              <option [value]="3">🔴 PAGO A PROVEEDOR (Egreso)</option>
+              <option [value]="5">🔴 RETIRO DE CIERRE (Egreso)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Monto (S/.)</label>
+            <input type="number" class="form-control form-control-lg text-end fw-bold" [(ngModel)]="nuevoMovimiento.monto" placeholder="0.00">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold">Descripción / Motivo</label>
+            <textarea class="form-control" [(ngModel)]="nuevoMovimiento.descripcion" rows="2" placeholder="Ej: Dinero base inicial, Pago de agua..."></textarea>
+          </div>
+          <button class="btn btn-primary w-100 fw-bold btn-lg shadow-sm" (click)="registrarMovimiento()">
+            REGISTRAR EN LIBRO
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+          <span>Historial de Movimientos de Hoy</span>
+          <span class="badge bg-secondary">{{ movimientos.length }} registros</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-hover table-striped mb-0 align-middle">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>Hora</th>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Usuario</th>
+                  <th class="text-end">Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="movimientos.length === 0">
+                  <td colspan="5" class="text-center py-4 text-muted">Aún no hay movimientos registrados hoy.</td>
+                </tr>
+                <tr *ngFor="let mov of movimientos">
+                  <td>{{ mov.fechaMovimiento | date:'HH:mm:ss' }}</td>
+                  <td>
+                    <span class="badge" 
+                          [ngClass]="{'bg-success': mov.tipoMovimiento.tipo_mov_id <= 2, 'bg-danger': mov.tipoMovimiento.tipo_mov_id > 2}">
+                      {{ mov.tipoMovimiento.nombre }}
+                    </span>
+                  </td>
+                  <td>{{ mov.descripcion }}</td>
+                  <td><small class="text-muted">{{ mov.usuario.nombreCompleto || 'Cajero' }}</small></td>
+                  <td class="text-end fw-bold" 
+                      [ngClass]="{'text-success': mov.tipoMovimiento.tipo_mov_id <= 2, 'text-danger': mov.tipoMovimiento.tipo_mov_id > 2}">
+                    {{ mov.tipoMovimiento.tipo_mov_id <= 2 ? '+' : '-' }}{{ mov.monto | currency:'PEN':'S/. ' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

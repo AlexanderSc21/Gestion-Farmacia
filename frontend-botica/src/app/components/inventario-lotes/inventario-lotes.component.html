@@ -1,0 +1,59 @@
+<div class="container mt-5 mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Inventario Físico (Semáforo de Lotes)</h2>
+  </div>
+
+  <div class="table-responsive shadow rounded">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Código de Lote</th>
+          <th>Medicamento</th>
+          <th class="text-center">Stock Actual</th>
+          <th class="text-center">Fecha Ingreso</th>
+          <th class="text-center">Vencimiento</th>
+          <th class="text-center">Alerta del Sistema</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="lotes.length === 0">
+          <td colspan="6" class="text-center text-muted py-4">No hay lotes en el inventario.</td>
+        </tr>
+        
+        <tr *ngFor="let lote of lotes" [ngClass]="'table-' + lote.estadoSemaforo">
+          
+          <td>
+            <strong>{{ lote.codigoLote }}</strong><br>
+            <small class="text-muted">Fac: {{ lote.nroFactura }}</small>
+          </td>
+          
+          <td>
+            {{ lote.nombreProducto }}<br>
+            <small class="text-muted">{{ lote.presentacionProducto }} ({{ lote.nombreProveedor }})</small>
+          </td>
+          
+          <td class="text-center fw-bold fs-5" [ngClass]="{'text-muted text-decoration-line-through': lote.cantidadActual === 0}">
+            {{ lote.cantidadActual }} u.
+          </td>
+          
+          <td class="text-center">{{ lote.fechaIngreso | date:'dd/MM/yyyy' }}</td>
+          <td class="text-center fw-bold">{{ lote.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+          
+          <td class="text-center">
+            <span class="badge w-100 py-2 border text-dark"
+                  [ngClass]="{
+                    'bg-success text-white border-success': lote.estadoSemaforo === 'success',
+                    'bg-warning border-warning': lote.estadoSemaforo === 'warning',
+                    'bg-danger text-white border-danger': lote.estadoSemaforo === 'danger'
+                  }">
+              <span *ngIf="lote.diasRestantes < 0">⚠️ Vencido hace {{ lote.diasRestantes * -1 }} días</span>
+              <span *ngIf="lote.diasRestantes === 0">🚨 ¡VENCE HOY!</span>
+              <span *ngIf="lote.diasRestantes > 0">Vence en {{ lote.diasRestantes }} días</span>
+            </span>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
