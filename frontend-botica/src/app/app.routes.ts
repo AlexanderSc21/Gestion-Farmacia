@@ -1,31 +1,37 @@
 import { Routes } from '@angular/router';
+import { LayoutComponent } from './components/layout/layout.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { UsuarioListaComponent } from './components/usuario-lista/usuario-lista.component';
-import { RegistroComponent } from './components/registro/registro.component';
-import { ProductoListaComponent } from './components/producto-lista/producto-lista.component'; 
-import { ProductoRegistroComponent } from './components/producto-registro/producto-registro.component';
+import { ProductoListaComponent } from './components/producto-lista/producto-lista.component';
 import { ProveedorListaComponent } from './components/proveedor-lista/proveedor-lista.component';
-import { ProveedorRegistroComponent } from './components/proveedor-registro/proveedor-registro.component';
 import { CompraRegistroComponent } from './components/compra-registro/compra-registro.component';
 import { InventarioLotesComponent } from './components/inventario-lotes/inventario-lotes.component';
 import { PosVentaComponent } from './components/pos-venta/pos-venta.component';
 import { CajaComponent } from './components/caja/caja.component';
 import { DevolucionesComponent } from './components/devoluciones/devoluciones.component';
+import { CategoriasComponent } from './components/categorias/categorias.component';
+import { AuthGuard } from './auth.guard';
+
+const ROLE_ADMIN = 1;
+const ROLE_VENDEDOR = 2;
 
 export const routes: Routes = [
-  { path: 'usuarios', component: UsuarioListaComponent },
-  { path: 'registro', component: RegistroComponent },
-  { path: 'editar/:id', component: RegistroComponent },
-  { path: 'productos', component: ProductoListaComponent },
-  { path: 'productos/nuevo', component: ProductoRegistroComponent },
-  { path: 'productos/editar/:id', component: ProductoRegistroComponent },
-  { path: 'proveedores', component: ProveedorListaComponent },
-  { path: 'proveedores/nuevo', component: ProveedorRegistroComponent },
-  { path: 'proveedores/editar/:id', component: ProveedorRegistroComponent },
-  { path: 'compras/nueva', component: CompraRegistroComponent },
-  { path: 'inventario', component: InventarioLotesComponent },
-  { path: 'caja', component: PosVentaComponent },
-  { path: 'arqueo', component: CajaComponent },
-  { path: 'devoluciones', component: DevolucionesComponent },
-
-  { path: '', redirectTo: '/caja', pathMatch: 'full' } // Cambiamos el inicio para ver los productos primero ahora
+  {
+    path: '',
+    component: LayoutComponent,
+    children: [
+      { path: 'dashboard', component: DashboardComponent },
+      { path: 'usuarios', component: UsuarioListaComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN] } },
+      { path: 'productos', component: ProductoListaComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN] } },
+      { path: 'categorias', component: CategoriasComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN] } },
+      { path: 'proveedores', component: ProveedorListaComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN] } },
+      { path: 'compras', component: CompraRegistroComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN] } },
+      { path: 'lotes', component: InventarioLotesComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN] } },
+      { path: 'ventas', component: PosVentaComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN, ROLE_VENDEDOR] } },
+      { path: 'caja', component: CajaComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN, ROLE_VENDEDOR] } },
+      { path: 'devoluciones', component: DevolucionesComponent, canActivate: [AuthGuard], data: { roleIds: [ROLE_ADMIN, ROLE_VENDEDOR] } },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+    ]
+  },
+  { path: '**', redirectTo: 'dashboard' }
 ];

@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router'; // <--- Importaciones necesarias
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { UsuarioService } from '../../services/usuario.service';
+import { Usuario } from '../../models/models';
 
 @Component({
   selector: 'app-registro',
@@ -11,64 +12,103 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router'; // <--- 
   templateUrl: './registro.component.html'
 })
 export class RegistroComponent implements OnInit {
-  // Estructura limpia del usuario
-  usuario = {
-    nombre_completo: '',
-    email: '',
-    password_hash: '',
-    rol: { rol_id: 2 } // Vendedor por defecto
-  };
+  @Input() embedded = false;
+  @Output() saved = new EventEmitter<void>();
+  @Output() cancelled = new EventEmitter<void>();
 
-  esEdicion: boolean = false; // Variable para saber si estamos registrando o editando
-  usuarioId!: number;
+  private _usuarioId?: number;
+  @Input() set usuarioId(value: number | undefined) {
+    this._usuarioId = value;
+    this.aplicarModoDesdeId();
+  }
+  get usuarioId(): number | undefined {
+    return this._usuarioId;
+  }
+
+  usuario: Usuario = this.crearUsuarioVacio();
+
+  esEdicion: boolean = false;
 
   constructor(
-    private http: HttpClient,
-    private route: ActivatedRoute, // Para leer el ID de la URL
-    private router: Router          // Para redireccionar páginas
+    private usuarioService: UsuarioService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    // Revisamos si en la URL viene el parámetro 'id'
+    if (this._usuarioId != null) {
+      this.aplicarModoDesdeId();
+      return;
+    }
+
     const idParam = this.route.snapshot.paramMap.get('id');
-    
-    if (idParam) {
+    if (idParam) this.usuarioId = +idParam;
+  }
+
+  private crearUsuarioVacio(): Usuario {
+    return {
+      nombre_completo: '',
+      email: '',
+      password_hash: '',
+      activo: true,
+      rol: { rol_id: 2, nombre: 'Vendedor', descripcion: '' }
+    };
+  }
+
+  private aplicarModoDesdeId() {
+    if (this._usuarioId != null) {
       this.esEdicion = true;
-      this.usuarioId = +idParam; // El "+" convierte el texto de la URL a número
-      this.cargarUsuario(this.usuarioId);
+      this.cargarUsuario(this._usuarioId);
+    } else {
+      this.esEdicion = false;
+      this.usuario = this.crearUsuarioVacio();
     }
   }
 
-  // Si es edición, buscamos los datos actuales del usuario para llenar el formulario
   cargarUsuario(id: number) {
-    // Usamos el endpoint de listar para buscar al usuario específico (luego podemos optimizar esto)
-    this.http.get<any[]>('http://localhost:8080/api/usuarios/listar').subscribe(usuarios => {
+    this.usuarioService.listar().subscribe(usuarios => {
       const userFound = usuarios.find(u => u.usuario_id === id);
       if (userFound) {
-        this.usuario.nombre_completo = userFound.nombre_completo;
-        this.usuario.email = userFound.email;
-        this.usuario.rol.rol_id = userFound.rol.rol_id;
-        // La contraseña la dejamos en blanco por seguridad
+        this.usuario = { ...userFound };
+        this.usuario.password_hash = '';
       }
     });
   }
 
-  // Esta función ahora decidirá si guarda uno nuevo o actualiza el existente
   registrar() {
-    if (this.esEdicion) {
-      // Si estamos editando, enviamos los datos al endpoint @PutMapping de Java
-      this.http.put(`http://localhost:8080/api/usuarios/actualizar/${this.usuarioId}`, this.usuario)
-        .subscribe(() => {
-          alert('¡Usuario actualizado con éxito!');
-          this.router.navigate(['/usuarios']); // Nos regresa automáticamente a la tabla
+    if (this.esEdicion && this._usuarioId) {
+      this.usuarioService.actualizar(this._usuarioId, this.usuario)
+        .subscribe({
+          next: () => {
+            alert('¡Usuario actualizado con éxito!');
+            if (this.embedded) {
+              this.saved.emit();
+            } else {
+              this.router.navigate(['/usuarios']);
+            }
+          }
         });
     } else {
-      // Si no es edición, se comporta exactamente como antes (Crea un nuevo registro)
-      this.http.post('http://localhost:8080/api/usuarios/registro', this.usuario)
-        .subscribe(() => {
-          alert('¡Usuario registrado con éxito!');
-          this.router.navigate(['/usuarios']);
+      this.usuarioService.registrar(this.usuario)
+        .subscribe({
+          next: () => {
+            alert('¡Usuario registrado con éxito!');
+            if (this.embedded) {
+              this.saved.emit();
+              this.usuario = this.crearUsuarioVacio();
+            } else {
+              this.router.navigate(['/usuarios']);
+            }
+          }
         });
     }
+  }
+
+  cancelar() {
+    if (this.embedded) {
+      this.cancelled.emit();
+      return;
+    }
+    this.router.navigate(['/usuarios']);
   }
 }

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { MovimientoCajaService } from '../../services/movimiento-caja.service';
+import { MovimientoCaja } from '../../models/models';
 
 @Component({
   selector: 'app-caja',
@@ -10,33 +11,28 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './caja.component.html'
 })
 export class CajaComponent implements OnInit {
-  // Variables para la vista
   resumen = { ingresos: 0, egresos: 0, saldoCaja: 0 };
-  movimientos: any[] = [];
+  movimientos: MovimientoCaja[] = [];
 
-  // Objeto para el formulario de movimientos manuales
-  nuevoMovimiento = {
-    tipoMovId: 1, // Por defecto: 1 (APERTURA)
-    monto: null,
+  nuevoMovimiento: any = {
+    tipoMovId: 1,
+    monto: 0,
     descripcion: '',
-    usuarioId: 1 // Por ahora, asumimos que es el ADMIN (ID 1)
+    usuarioId: 1
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(private cajaService: MovimientoCajaService) {}
 
   ngOnInit(): void {
     this.cargarDatosCaja();
   }
 
   cargarDatosCaja() {
-    // 1. Traer los totales calculados
-    this.http.get<any>('http://localhost:8080/api/caja/resumen').subscribe(data => {
+    this.cajaService.obtenerResumen().subscribe(data => {
       this.resumen = data;
     });
 
-    // 2. Traer el historial de la tabla (Ventas, Gastos, etc.)
-    this.http.get<any[]>('http://localhost:8080/api/caja/movimientos').subscribe(data => {
-      // Ordenamos para que los más recientes salgan arriba
+    this.cajaService.listar().subscribe(data => {
       this.movimientos = data.sort((a, b) => 
         new Date(b.fechaMovimiento).getTime() - new Date(a.fechaMovimiento).getTime()
       );
@@ -53,13 +49,11 @@ export class CajaComponent implements OnInit {
       return;
     }
 
-    this.http.post('http://localhost:8080/api/caja/registrar', this.nuevoMovimiento).subscribe({
+    this.cajaService.registrar(this.nuevoMovimiento).subscribe({
       next: () => {
-        alert('Movimiento registrado con éxito en el libro contable.');
-        this.cargarDatosCaja(); // Refrescar los números y la tabla
-        
-        // Limpiar el formulario
-        this.nuevoMovimiento.monto = null;
+        alert('Movimiento registrado con éxito.');
+        this.cargarDatosCaja();
+        this.nuevoMovimiento.monto = 0;
         this.nuevoMovimiento.descripcion = '';
         this.nuevoMovimiento.tipoMovId = 1;
       },

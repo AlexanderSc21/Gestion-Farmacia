@@ -1,101 +1,103 @@
-<div class="container mt-4 mb-5">
-  <h2 class="mb-4">Registro de Ingreso de Mercadería (Compras)</h2>
-
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-dark text-white">1. Datos del Proveedor y Factura</div>
-    <div class="card-body">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label fw-bold">Proveedor *</label>
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Datos de Factura</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Proveedor</label>
           <select class="form-select" [(ngModel)]="compra.proveedorId">
-            <option [ngValue]="null" disabled>Seleccione el laboratorio/distribuidor</option>
-            <option *ngFor="let p of proveedores" [ngValue]="p.proveedor_id">
-              {{ p.ruc }} - {{ p.razonSocial }}
-            </option>
+            <option [ngValue]="null" disabled>Seleccione un proveedor</option>
+            <option *ngFor="let p of proveedores" [value]="p.proveedor_id">{{ p.razonSocial }}</option>
           </select>
         </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label fw-bold">Nro. de Factura / Guía *</label>
-          <input type="text" class="form-control" placeholder="Ej: F001-000456" [(ngModel)]="compra.nroFactura">
+        <div class="mb-3">
+          <label class="form-label">Número de Factura</label>
+          <input type="text" class="form-control" [(ngModel)]="compra.nroFactura" placeholder="Ej: F001-000123">
         </div>
+        <div class="h3 text-center text-primary mt-4">
+          Total: {{ compra.montoTotal | currency:'S/ ' }}
+        </div>
+        <button (click)="registrarCompra()" class="btn btn-success w-100 btn-lg mt-3" [disabled]="compra.detalles.length === 0">
+          <i class="bi bi-save"></i> Registrar Compra
+        </button>
       </div>
     </div>
-  </div>
 
-  <div class="card shadow-sm mb-4 border-primary">
-    <div class="card-header bg-primary text-white">2. Ingresar Lotes Físicos</div>
-    <div class="card-body bg-light">
-      <div class="row align-items-end">
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Medicamento</label>
+    <div class="card shadow">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">Agregar Medicamento</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Producto</label>
           <select class="form-select" [(ngModel)]="itemTemp.productoId">
-            <option [ngValue]="null" disabled>Seleccione...</option>
-            <option *ngFor="let prod of productos" [ngValue]="prod.producto_id">
-              {{ prod.nombreComercial }} ({{ prod.presentacion }})
-            </option>
+            <option [ngValue]="null" disabled>Seleccione un producto</option>
+            <option *ngFor="let p of productos" [value]="p.producto_id">{{ p.nombreComercial }}</option>
           </select>
         </div>
-        <div class="col-md-2 mb-3">
-          <label class="form-label">Cantidad</label>
-          <input type="number" class="form-control" placeholder="Unidades" [(ngModel)]="itemTemp.cantidad">
+        <div class="row mb-3">
+          <div class="col-6">
+            <label class="form-label">Cantidad</label>
+            <input type="number" class="form-control" [(ngModel)]="itemTemp.cantidad">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Precio Unit.</label>
+            <input type="number" class="form-control" [(ngModel)]="itemTemp.precioUnitario">
+          </div>
         </div>
-        <div class="col-md-2 mb-3">
-          <label class="form-label">Costo Unit.</label>
-          <input type="number" step="0.01" class="form-control" placeholder="S/." [(ngModel)]="itemTemp.precioUnitario">
+        <div class="mb-3">
+          <label class="form-label">Fecha Vencimiento</label>
+          <input type="date" class="form-control" [(ngModel)]="itemTemp.fechaVencimiento">
         </div>
-        <div class="col-md-3 mb-3">
-          <label class="form-label text-danger fw-bold">Fecha Vencimiento *</label>
-          <input type="date" class="form-control border-danger" [(ngModel)]="itemTemp.fechaVencimiento">
-        </div>
-        <div class="col-md-1 mb-3 text-end">
-          <button class="btn btn-success w-100" (click)="agregarItem()">+</button>
-        </div>
+        <button (click)="agregarItem()" class="btn btn-primary w-100">
+          <i class="bi bi-plus-circle"></i> Agregar a la Lista
+        </button>
       </div>
     </div>
   </div>
 
-  <div class="card shadow-sm">
-    <div class="card-header bg-secondary text-white">3. Detalle de la Compra</div>
-    <div class="card-body p-0">
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Producto</th>
-            <th class="text-center">Vencimiento</th>
-            <th class="text-center">Cant.</th>
-            <th class="text-end">Costo U.</th>
-            <th class="text-end">Subtotal</th>
-            <th class="text-center">Quitar</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="compra.detalles.length === 0">
-            <td colspan="6" class="text-center text-muted py-3">Aún no hay medicamentos en la factura.</td>
-          </tr>
-          <tr *ngFor="let det of compra.detalles; let i = index">
-            <td>{{ det.nombreProducto }}</td>
-            <td class="text-center">
-              <span class="badge bg-warning text-dark">{{ det.fechaVencimiento }}</span>
-            </td>
-            <td class="text-center">{{ det.cantidad }}</td>
-            <td class="text-end">{{ det.precioUnitario | currency:'PEN':'S/. ' }}</td>
-            <td class="text-end fw-bold">{{ det.subtotal | currency:'PEN':'S/. ' }}</td>
-            <td class="text-center">
-              <button class="btn btn-sm btn-outline-danger" (click)="quitarItem(i)">x</button>
-            </td>
-          </tr>
-        </tbody>
-        <tfoot *ngIf="compra.detalles.length > 0">
-          <tr class="table-dark">
-            <td colspan="4" class="text-end fs-5"><strong>TOTAL FACTURA:</strong></td>
-            <td class="text-end fs-5 text-success fw-bold">{{ compra.montoTotal | currency:'PEN':'S/. ' }}</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-    <div class="card-footer text-end py-3">
-      <button class="btn btn-lg btn-primary" (click)="registrarCompra()">Registrar Ingreso en Inventario</button>
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Detalle de la Compra</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Producto</th>
+                <th>Cant.</th>
+                <th>P. Unit.</th>
+                <th>Vencimiento</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of compra.detalles; let i = index">
+                <td>{{ item.nombreProducto }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.precioUnitario | currency:'S/ ' }}</td>
+                <td>{{ item.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                <td class="fw-bold">{{ item.subtotal | currency:'S/ ' }}</td>
+                <td>
+                  <button (click)="quitarItem(i)" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="compra.detalles.length === 0">
+                <td colspan="6" class="text-center py-5 text-muted">
+                  Aún no has agregado medicamentos a esta compra.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

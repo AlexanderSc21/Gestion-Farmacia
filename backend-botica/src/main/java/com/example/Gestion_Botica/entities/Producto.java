@@ -1,11 +1,10 @@
 package com.example.Gestion_Botica.entities;
-import java.math.BigDecimal;
+
 import jakarta.persistence.*;
-import lombok.Data;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "productos")
-@Data
 public class Producto {
 
     @Id
@@ -21,7 +20,7 @@ public class Producto {
     @Column(name = "imagen_url")
     private String imagenUrl;
 
-    @Column(name = "nombre_generico")
+    @Column(name = "nombre_generico", nullable = false)
     private String nombreGenerico;
 
     @Column(nullable = false)
@@ -30,11 +29,38 @@ public class Producto {
     @Column(name = "precio_venta_unitario", nullable = false)
     private BigDecimal precioVentaUnitario;
 
-    @Column(name = "stock_minimo")
+    @Column(name = "stock_minimo", nullable = false)
     private Integer stockMinimo;
 
-    // Relación ManyToOne con la tabla de Categorías
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "categoria_id")
     private Categoria categoria;
+
+    // Getters y Setters
+    public Integer getProducto_id() { return producto_id; }
+    public void setProducto_id(Integer producto_id) { this.producto_id = producto_id; }
+
+    public String getNombreComercial() { return nombreComercial; }
+    public void setNombreComercial(String nombreComercial) { this.nombreComercial = nombreComercial; }
+
+    public String getImagenPath() { return imagenPath; }
+    public void setImagenPath(String imagenPath) { this.imagenPath = imagenPath; }
+
+    public String getImagenUrl() { return imagenUrl; }
+    public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+
+    public String getNombreGenerico() { return nombreGenerico; }
+    public void setNombreGenerico(String nombreGenerico) { this.nombreGenerico = nombreGenerico; }
+
+    public String getPresentacion() { return presentacion; }
+    public void setPresentacion(String presentacion) { this.presentacion = presentacion; }
+
+    public BigDecimal getPrecioVentaUnitario() { return precioVentaUnitario; }
+    public void setPrecioVentaUnitario(BigDecimal precioVentaUnitario) { this.precioVentaUnitario = precioVentaUnitario; }
+
+    public Integer getStockMinimo() { return stockMinimo; }
+    public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }
+
+    public Categoria getCategoria() { return categoria; }
+    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
 }

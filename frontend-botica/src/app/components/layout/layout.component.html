@@ -1,0 +1,178 @@
+<div class="wrapper">
+  <!-- Sidebar -->
+  <nav id="sidebar" [class.active]="isSidebarCollapsed">
+    <div class="sidebar-header d-flex flex-column p-3">
+      <h3 class="fw-bold mb-0">Botica</h3>
+      <small class="opacity-50">BT</small>
+    </div>
+
+    <ul class="list-unstyled components">
+      <li>
+        <a routerLink="/dashboard" routerLinkActive="active">
+          <i class="bi bi-speedometer2"></i>
+          <span>Inicio / Bienvenida</span>
+        </a>
+      </li>
+      <ng-container *ngIf="usuario$ | async as user">
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN])">
+          <a routerLink="/productos" routerLinkActive="active">
+            <i class="bi bi-capsule"></i>
+            <span>Productos</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN])">
+          <a routerLink="/categorias" routerLinkActive="active">
+            <i class="bi bi-tags"></i>
+            <span>Categorías</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN])">
+          <a routerLink="/lotes" routerLinkActive="active">
+            <i class="bi bi-box-seam"></i>
+            <span>Lotes / Inventario</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN])">
+          <a routerLink="/compras" routerLinkActive="active">
+            <i class="bi bi-cart-plus"></i>
+            <span>Compras</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN, ROLE_VENDEDOR])">
+          <a routerLink="/ventas" routerLinkActive="active">
+            <i class="bi bi-cash-coin"></i>
+            <span>Ventas (POS)</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN, ROLE_VENDEDOR])">
+          <a routerLink="/devoluciones" routerLinkActive="active">
+            <i class="bi bi-arrow-return-left"></i>
+            <span>Devoluciones</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN])">
+          <a routerLink="/proveedores" routerLinkActive="active">
+            <i class="bi bi-truck"></i>
+            <span>Proveedores</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN, ROLE_VENDEDOR])">
+          <a routerLink="/caja" routerLinkActive="active">
+            <i class="bi bi-safe"></i>
+            <span>Caja</span>
+          </a>
+        </li>
+        <li *ngIf="tieneRol(user, [ROLE_ADMIN])">
+          <a routerLink="/usuarios" routerLinkActive="active">
+            <i class="bi bi-people"></i>
+            <span>Usuarios</span>
+          </a>
+        </li>
+      </ng-container>
+
+      <li *ngIf="!(usuario$ | async)">
+        <div class="p-3 text-center">
+          <small class="text-warning">Inicia sesión para ver los módulos</small>
+        </div>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Page Content -->
+  <div id="content">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+      <div class="container-fluid">
+        <button type="button" id="sidebarCollapse" class="btn btn-info me-3" (click)="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <!-- Botones de Auth en el NAV (Cuando NO hay sesión) -->
+        <div class="d-flex gap-2" *ngIf="!(usuario$ | async)">
+          <button class="btn btn-primary d-flex align-items-center" (click)="authMode = 'login'">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+          </button>
+          <button class="btn btn-outline-success d-flex align-items-center" (click)="authMode = 'register'">
+            <i class="bi bi-person-plus me-2"></i> Crear Cuenta
+          </button>
+        </div>
+
+        <div class="ms-auto d-flex align-items-center" *ngIf="usuario$ | async as user">
+          <span class="navbar-text me-3 text-dark d-flex align-items-center">
+            <i class="bi bi-person-circle fs-5 me-2"></i>
+            <span class="fw-bold me-1">{{ user.nombre_completo }}</span>
+            <span class="badge bg-secondary text-uppercase" style="font-size: 0.65em; letter-spacing: 0.5px;">{{ user.rol?.nombre }}</span>
+          </span>
+          <button class="btn btn-outline-danger btn-sm px-3 border-secondary-subtle" (click)="logout()">
+            <i class="bi bi-box-arrow-right me-1"></i> Salir
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Overlay de Formularios de Autenticación -->
+    <div class="auth-overlay" *ngIf="authMode !== 'none'" (click)="authMode = 'none'">
+      <div class="card auth-popup-card shadow-lg border-0 rounded-4" (click)="$event.stopPropagation()">
+        
+        <!-- Formulario Login -->
+        <div *ngIf="authMode === 'login'" class="p-4">
+          <div class="text-center mb-4">
+            <i class="bi bi-capsule-pill text-primary display-4 mb-2"></i>
+            <h4 class="fw-bold mb-1">Sistema Botica</h4>
+            <p class="text-muted small">Acceso al personal</p>
+          </div>
+          <form (ngSubmit)="onLogin()">
+            <div class="mb-3">
+              <div class="input-group custom-input">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input type="email" class="form-control" name="email" [(ngModel)]="loginData.email" required placeholder="Correo electrónico">
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="input-group custom-input">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                <input type="password" class="form-control" name="password" [(ngModel)]="loginData.password" required placeholder="Contraseña">
+              </div>
+            </div>
+            <div *ngIf="error" class="alert alert-danger py-2 small mb-3 text-center">{{ error }}</div>
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow">INGRESAR</button>
+            <button type="button" class="btn btn-link w-100 mt-3 text-decoration-none small" (click)="authMode = 'register'">¿No tienes cuenta? Regístrate</button>
+          </form>
+        </div>
+
+        <!-- Formulario Registro -->
+        <div *ngIf="authMode === 'register'" class="p-4">
+          <div class="text-center mb-4">
+            <h4 class="fw-bold mb-1">Nueva Cuenta Admin</h4>
+            <p class="text-muted small">Regístrate como administrador para gestionar la botica</p>
+          </div>
+          <form (ngSubmit)="onRegister()">
+            <div class="mb-2">
+              <label class="form-label small mb-1">Nombre Completo</label>
+              <input type="text" class="form-control" name="reg_nombre" [(ngModel)]="regData.nombre_completo" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small mb-1">Correo</label>
+              <input type="email" class="form-control" name="reg_email" [(ngModel)]="regData.email" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small mb-1">Contraseña</label>
+              <input type="password" class="form-control" name="reg_pass" [(ngModel)]="regData.password_hash" required>
+            </div>
+            
+            <div class="alert alert-info py-2 small mb-3">
+              <i class="bi bi-info-circle me-2"></i> Esta cuenta tendrá privilegios de <strong>Administrador</strong>.
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 py-2 fw-bold rounded-3">REGISTRAR ADMINISTRADOR</button>
+            <button type="button" class="btn btn-link w-100 mt-2 text-decoration-none small" (click)="authMode = 'login'">¿Ya tienes cuenta? Ingresa</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container-fluid p-4">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

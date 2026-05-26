@@ -1,83 +1,93 @@
-<div class="container-fluid mt-4 mb-5" style="max-width: 900px;">
-  <h2 class="mb-4 fw-bold text-danger"><i class="bi bi-arrow-return-left"></i> Centro de Devoluciones</h2>
-
-  <div class="card shadow-sm mb-4">
-    <div class="card-body bg-light">
-      <label class="form-label fw-bold">Ingrese el Número de Comprobante</label>
-      <div class="input-group input-group-lg shadow-sm">
-        <span class="input-group-text bg-white">🧾</span>
-        <input type="text" class="form-control border-start-0" 
-               placeholder="Ej: B001-123456" 
-               [(ngModel)]="nroComprobante"
-               (keyup.enter)="buscarTicket()">
-        <button class="btn btn-dark fw-bold px-4" (click)="buscarTicket()">BUSCAR</button>
+<div class="row">
+  <div class="col-md-5">
+    <div class="card shadow mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-search"></i> Buscar Venta para Devolución</h5>
       </div>
-      <small class="text-danger mt-2 fw-bold d-block" *ngIf="mensajeError">{{ mensajeError }}</small>
-    </div>
-  </div>
+      <div class="card-body">
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" placeholder="Nro de Comprobante (Ej: B001-123456)" [(ngModel)]="nroComprobante">
+          <button (click)="buscarTicket()" class="btn btn-primary" type="button">Buscar</button>
+        </div>
+        <div *ngIf="mensajeError" class="alert alert-danger">{{ mensajeError }}</div>
 
-  <div class="card shadow-sm mb-4 border-0" *ngIf="ventaEncontrada">
-    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-      <h6 class="mb-0 fw-bold">Detalle del Comprobante: {{ ventaEncontrada.nroComprobante }}</h6>
-      <span class="badge bg-light text-dark">{{ ventaEncontrada.fechaVenta | date:'dd/MM/yyyy HH:mm' }}</span>
+        <div *ngIf="ventaEncontrada" class="card bg-light">
+          <div class="card-body">
+            <h6 class="card-title fw-bold">Detalle del Comprobante</h6>
+            <p class="mb-1"><strong>Fecha:</strong> {{ ventaEncontrada.fechaVenta | date:'dd/MM/yyyy HH:mm' }}</p>
+            <p class="mb-1"><strong>Vendedor:</strong> {{ ventaEncontrada.usuario?.nombre_completo }}</p>
+            <p class="mb-0"><strong>Total Pagado:</strong> <span class="text-success fw-bold">{{ ventaEncontrada.total | currency:'S/ ' }}</span></p>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-3">Producto</th>
-              <th>Cód. Lote</th>
-              <th class="text-center">Compró</th>
-              <th>P. Unitario</th>
-              <th class="text-end pe-3">Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let det of detallesVenta">
-              <td class="ps-3 fw-bold text-primary">{{ det.lote.producto?.nombreGenerico || 'Medicamento' }}</td>
-              <td><small class="text-muted">{{ det.lote.codigoLote }}</small></td>
-              <td class="text-center"><span class="badge bg-secondary fs-6">{{ det.cantidad }} u.</span></td>
-              <td>{{ det.precioUnitario | currency:'PEN':'S/. ' }}</td>
-              <td class="text-end pe-3">
-                <button class="btn btn-outline-danger btn-sm fw-bold" (click)="prepararDevolucion(det)">
-                  ↻ Procesar Devolución
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+    <div *ngIf="detalleSeleccionado" class="card shadow border-warning">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">Procesar Devolución</h5>
+      </div>
+      <div class="card-body">
+        <h6>Producto: <strong>{{ detalleSeleccionado.lote.producto.nombreComercial }}</strong></h6>
+        <p class="small text-muted">Lote: {{ detalleSeleccionado.lote.codigoLote }}</p>
+        
+        <div class="mb-3">
+          <label class="form-label">Cantidad a Devolver (Máx: {{ detalleSeleccionado.cantidad }})</label>
+          <input type="number" class="form-control" [(ngModel)]="cantidadDevolver" min="1" [max]="detalleSeleccionado.cantidad">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Motivo de Devolución</label>
+          <textarea class="form-control" [(ngModel)]="motivoDevolucion" rows="3" placeholder="Ej: Producto dañado, Vencido, etc."></textarea>
+        </div>
+        <div class="alert alert-light border py-2 small d-flex justify-content-between align-items-center">
+          <span>Monto a devolver:</span>
+          <strong class="text-danger">{{ montoDevolucion | currency:'S/ ' }}</strong>
+        </div>
+        <button (click)="procesarDevolucion()" class="btn btn-warning w-100 fw-bold">CONFIRMAR DEVOLUCIÓN</button>
       </div>
     </div>
   </div>
 
-  <div class="card border-danger shadow-lg mt-4" *ngIf="detalleSeleccionado">
-    <div class="card-header bg-danger text-white fw-bold fs-5">
-      ⚠️ Reembolso de Producto
-    </div>
-    <div class="card-body bg-white">
-      <div class="alert alert-warning mb-4">
-        Estás a punto de devolver <strong>{{ detalleSeleccionado.lote.producto?.nombreGenerico || 'este producto' }}</strong>. El dinero se restará automáticamente del arqueo de caja actual.
+  <div class="col-md-7">
+    <div class="card shadow h-100">
+      <div class="card-header bg-white">
+        <h5 class="mb-0 text-primary">Medicamentos en este Ticket</h5>
       </div>
-      
-      <div class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Cantidad a regresar</label>
-          <input type="number" class="form-control form-control-lg text-center" 
-                 [(ngModel)]="cantidadDevolver" min="1" [max]="detalleSeleccionado.cantidad">
-          <small class="text-muted">Máx. {{ detalleSeleccionado.cantidad }} permitidas</small>
-        </div>
-        <div class="col-md-9">
-          <label class="form-label fw-bold">Motivo (Obligatorio por política)</label>
-          <input type="text" class="form-control form-control-lg" 
-                 [(ngModel)]="motivoDevolucion" 
-                 placeholder="Ej: Reacción alérgica, error de receta médica, producto dañado...">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Medicamento</th>
+                <th>Cant.</th>
+                <th>Precio</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let det of detallesVenta">
+                <td>
+                  <strong>{{ det.lote.producto.nombreComercial }}</strong><br>
+                  <small class="text-muted">Lote: {{ det.lote.codigoLote }}</small>
+                </td>
+                <td>{{ det.cantidad }}</td>
+                <td>{{ det.precioUnitario | currency:'S/ ' }}</td>
+                <td class="fw-bold">{{ det.subtotal | currency:'S/ ' }}</td>
+                <td>
+                  <button (click)="prepararDevolucion(det)" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-arrow-return-left"></i> Devolver
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="detallesVenta.length === 0">
+                <td colspan="5" class="text-center py-5 text-muted">
+                  Ingresa un número de comprobante para ver los detalles.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
-    <div class="card-footer bg-light d-flex justify-content-end gap-3 py-3">
-      <button class="btn btn-outline-secondary btn-lg fw-bold" (click)="detalleSeleccionado = null">Cancelar</button>
-      <button class="btn btn-danger btn-lg fw-bold px-5" (click)="procesarDevolucion()">CONFIRMAR REEMBOLSO</button>
     </div>
   </div>
 </div>

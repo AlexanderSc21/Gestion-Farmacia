@@ -1,59 +1,97 @@
-<div class="container mt-5 mb-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Inventario Físico (Semáforo de Lotes)</h2>
+<div class="card shadow">
+  <div class="card-header bg-primary text-white">
+    <h4 class="mb-0">Control de Lotes e Inventario</h4>
   </div>
-
-  <div class="table-responsive shadow rounded">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-dark">
-        <tr>
-          <th>Código de Lote</th>
-          <th>Medicamento</th>
-          <th class="text-center">Stock Actual</th>
-          <th class="text-center">Fecha Ingreso</th>
-          <th class="text-center">Vencimiento</th>
-          <th class="text-center">Alerta del Sistema</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngIf="lotes.length === 0">
-          <td colspan="6" class="text-center text-muted py-4">No hay lotes en el inventario.</td>
-        </tr>
-        
-        <tr *ngFor="let lote of lotes" [ngClass]="'table-' + lote.estadoSemaforo">
-          
-          <td>
-            <strong>{{ lote.codigoLote }}</strong><br>
-            <small class="text-muted">Fac: {{ lote.nroFactura }}</small>
-          </td>
-          
-          <td>
-            {{ lote.nombreProducto }}<br>
-            <small class="text-muted">{{ lote.presentacionProducto }} ({{ lote.nombreProveedor }})</small>
-          </td>
-          
-          <td class="text-center fw-bold fs-5" [ngClass]="{'text-muted text-decoration-line-through': lote.cantidadActual === 0}">
-            {{ lote.cantidadActual }} u.
-          </td>
-          
-          <td class="text-center">{{ lote.fechaIngreso | date:'dd/MM/yyyy' }}</td>
-          <td class="text-center fw-bold">{{ lote.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
-          
-          <td class="text-center">
-            <span class="badge w-100 py-2 border text-dark"
-                  [ngClass]="{
-                    'bg-success text-white border-success': lote.estadoSemaforo === 'success',
-                    'bg-warning border-warning': lote.estadoSemaforo === 'warning',
-                    'bg-danger text-white border-danger': lote.estadoSemaforo === 'danger'
-                  }">
-              <span *ngIf="lote.diasRestantes < 0">⚠️ Vencido hace {{ lote.diasRestantes * -1 }} días</span>
-              <span *ngIf="lote.diasRestantes === 0">🚨 ¡VENCE HOY!</span>
-              <span *ngIf="lote.diasRestantes > 0">Vence en {{ lote.diasRestantes }} días</span>
-            </span>
-          </td>
-
-        </tr>
-      </tbody>
-    </table>
+  <div class="card-body">
+    <div class="card mb-3 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label">Buscar</label>
+            <input type="text" class="form-control" [(ngModel)]="filtro.texto" placeholder="Producto, lote o nombre genérico">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" [(ngModel)]="filtro.estado">
+              <option value="TODOS">Todos</option>
+              <option value="VENCIDO">Vencido</option>
+              <option value="Próximo a Vencer">Próximo a vencer</option>
+              <option value="En Alerta">En alerta</option>
+              <option value="Vigente">Vigente</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Categoría</label>
+            <select class="form-select" [(ngModel)]="filtro.categoria">
+              <option value="TODAS">Todas</option>
+              <option *ngFor="let c of categoriasUnicas" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-outline-secondary w-100" (click)="limpiarFiltros()">Limpiar</button>
+          </div>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-md-6">
+            <label class="form-label">Proveedor</label>
+            <select class="form-select" [(ngModel)]="filtro.proveedor">
+              <option value="TODOS">Todos</option>
+              <option *ngFor="let p of proveedoresUnicos" [value]="p">{{ p }}</option>
+            </select>
+          </div>
+          <div class="col-md-6 d-flex align-items-end justify-content-end">
+            <div class="small text-muted">
+              Mostrando {{ lotesFiltrados.length }} de {{ lotes.length }} lotes
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Lote</th>
+            <th>Producto</th>
+            <th>Fecha Ingreso</th>
+            <th>Vencimiento</th>
+            <th>Stock Actual</th>
+            <th>Estado</th>
+            <th>Días Rest.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of lotesFiltrados">
+            <td><code>{{ l.codigoLote }}</code></td>
+            <td>
+              <strong>{{ getNombreProducto(l) }}</strong><br>
+              <small class="text-muted">{{ getNombreGenerico(l) }}</small>
+              <div class="small text-muted" *ngIf="getCategoriaNombre(l)">{{ getCategoriaNombre(l) }}</div>
+              <div class="small text-muted" *ngIf="getNombreProveedor(l) || getNroFactura(l)">
+                <span *ngIf="getNombreProveedor(l)">{{ getNombreProveedor(l) }}</span>
+                <span *ngIf="getNombreProveedor(l) && getNroFactura(l)"> · </span>
+                <span *ngIf="getNroFactura(l)">Factura: {{ getNroFactura(l) }}</span>
+              </div>
+            </td>
+            <td>{{ l.fechaIngreso | date:'dd/MM/yyyy' }}</td>
+            <td>{{ l.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+            <td class="h5">
+              <span class="badge bg-secondary">{{ l.cantidadActual }}</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="'bg-' + l.estadoSemaforo">
+                {{ obtenerEtiquetaEstado(l.diasRestantes) }}
+              </span>
+            </td>
+            <td>
+              <strong [ngClass]="'text-' + l.estadoSemaforo">{{ l.diasRestantes }} días</strong>
+            </td>
+          </tr>
+          <tr *ngIf="lotesFiltrados.length === 0">
+            <td colspan="7" class="text-center py-4">No hay lotes registrados en el inventario.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

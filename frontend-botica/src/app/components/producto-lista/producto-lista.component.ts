@@ -1,49 +1,69 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { ProductoService } from '../../services/producto.service';
+import { Producto } from '../../models/models';
+import { ProductoRegistroComponent } from '../producto-registro/producto-registro.component';
 
 @Component({
   selector: 'app-producto-lista',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, ProductoRegistroComponent],
   templateUrl: './producto-lista.component.html'
-  // Si usas styleUrl, déjalo como estaba por defecto
 })
 export class ProductoListaComponent implements OnInit {
-  productos: any[] = []; // Aquí guardaremos los medicamentos que traiga Java
+  productos: Producto[] = [];
+  mostrarFormulario = false;
+  productoEditId?: number;
 
-  constructor(private http: HttpClient) {}
+  constructor(private productoService: ProductoService) {}
 
   ngOnInit(): void {
-    this.obtenerProductos(); // Ejecuta la búsqueda apenas cargue la pantalla
+    this.obtenerProductos();
   }
 
   obtenerProductos() {
-    this.http.get<any[]>('http://localhost:8080/api/productos/listar')
-      .subscribe({
-        next: (data) => {
-          this.productos = data;
-        },
-        error: (err) => {
-          console.error('Error al traer los productos:', err);
-        }
-      });
+    this.productoService.listar().subscribe({
+      next: (data) => {
+        this.productos = data;
+      },
+      error: (err) => {
+        console.error('Error al traer los productos:', err);
+      }
+    });
+  }
+
+  nuevoProducto() {
+    this.productoEditId = undefined;
+    this.mostrarFormulario = true;
+  }
+
+  editarProducto(id: number) {
+    this.productoEditId = id;
+    this.mostrarFormulario = true;
+  }
+
+  cerrarFormulario() {
+    this.mostrarFormulario = false;
+    this.productoEditId = undefined;
+  }
+
+  onProductoGuardado() {
+    this.cerrarFormulario();
+    this.obtenerProductos();
   }
 
   eliminar(id: number) {
     if (confirm('¿Estás seguro de que deseas eliminar este medicamento del catálogo?')) {
-      this.http.delete(`http://localhost:8080/api/productos/eliminar/${id}`)
-        .subscribe({
-          next: () => {
-            alert('Producto eliminado correctamente.');
-            this.obtenerProductos(); // Refresca la tabla automáticamente
-          },
-          error: (err) => {
-            console.error('Error al eliminar:', err);
-            alert('No se pudo eliminar. Verifica si el producto está siendo usado en otras tablas.');
-          }
-        });
+      this.productoService.eliminar(id).subscribe({
+        next: () => {
+          alert('Producto eliminado correctamente.');
+          this.obtenerProductos();
+        },
+        error: (err) => {
+          console.error('Error al eliminar:', err);
+          alert('No se pudo eliminar. Verifica si el producto está siendo usado en otras tablas.');
+        }
+      });
     }
   }
 }

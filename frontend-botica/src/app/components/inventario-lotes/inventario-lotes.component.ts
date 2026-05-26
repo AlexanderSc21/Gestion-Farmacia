@@ -1,57 +1,136 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { LoteService } from '../../services/lote.service';
+import { Lote } from '../../models/models';
+
+interface LoteExtendida extends Lote {
+  diasRestantes: number;
+  estadoSemaforo: string;
+  nombreProducto?: string;
+  presentacionProducto?: string;
+  categoriaNombre?: string;
+  nombreProveedor?: string;
+  nroFactura?: string;
+}
 
 @Component({
   selector: 'app-inventario-lotes',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './inventario-lotes.component.html'
 })
 export class InventarioLotesComponent implements OnInit {
-  lotes: any[] = [];
+  lotes: LoteExtendida[] = [];
+  categoriasUnicas: string[] = [];
+  proveedoresUnicos: string[] = [];
 
-  constructor(private http: HttpClient) {}
+  filtro = {
+    texto: '',
+    estado: 'TODOS',
+    categoria: 'TODAS',
+    proveedor: 'TODOS'
+  };
+
+  constructor(private loteService: LoteService) {}
 
   ngOnInit(): void {
     this.obtenerLotes();
   }
 
   obtenerLotes() {
-    this.http.get<any[]>('http://localhost:8080/api/lotes/listar')
-      .subscribe({
-        next: (data) => {
-          // Procesamos los datos antes de guardarlos para calcular sus días restantes
-          this.lotes = data.map(lote => {
-            const dias = this.calcularDiasRestantes(lote.fechaVencimiento);
-            return {
-              ...lote, // Mantiene todos los datos originales
-              diasRestantes: dias,
-              estadoSemaforo: this.determinarColor(dias)
-            };
-          });
-
-          // Ordenamos la tabla automáticamente: Los que están por vencer salen arriba
-          this.lotes.sort((a, b) => a.diasRestantes - b.diasRestantes);
-        },
-        error: (err) => console.error('Error al listar lotes:', err)
-      });
+    this.loteService.listar().subscribe({
+      next: (data) => {
+        this.lotes = data.map(lote => {
+          const dias = this.calcularDiasRestantes(lote.fechaVencimiento);
+          return {
+            ...lote,
+            diasRestantes: dias,
+            estadoSemaforo: this.determinarColor(dias)
+          } as LoteExtendida;
+        });
+        this.lotes.sort((a, b) => a.diasRestantes - b.diasRestantes);
+        this.categoriasUnicas = [
+          ...new Set(this.lotes.map(l => this.getCategoriaNombre(l)).filter(Boolean))
+        ] as string[];
+        this.proveedoresUnicos = [
+          ...new Set(this.lotes.map(l => this.getNombreProveedor(l)).filter(Boolean))
+        ] as string[];
+      },
+      error: (err) => console.error('Error al listar lotes:', err)
+    });
   }
 
-  // Lógica matemática para restar fechas
   calcularDiasRestantes(fechaVencimiento: string): number {
     const fechaVenc = new Date(fechaVencimiento);
     const hoy = new Date();
-    // Restamos en milisegundos y convertimos a días exactos
     const diferencia = fechaVenc.getTime() - hoy.getTime();
     return Math.ceil(diferencia / (1000 * 3600 * 24));
   }
 
-  // Asignación de colores de Bootstrap
   determinarColor(dias: number): string {
-    if (dias <= 90) return 'danger';    // Alerta Roja (Menos de 3 meses o vencido)
-    if (dias <= 180) return 'warning';  // Alerta Amarilla (De 3 a 6 meses)
-    return 'success';                   // Todo bien (Más de 6 meses)
+    if (dias <= 0) return 'danger';
+    if (dias <= 90) return 'danger';
+    if (dias <= 180) return 'warning';
+    return 'success';
+  }
+
+  obtenerEtiquetaEstado(dias: number): string {
+    if (dias <= 0) return 'VENCIDO';
+    if (dias <= 90) return 'Próximo a Vencer';
+    if (dias <= 180) return 'En Alerta';
+    return 'Vigente';
+  }
+
+  getNombreProducto(lote: LoteExtendida): string {
+    const fromNested = (lote as any)?.producto?.nombreComercial;
+    return (fromNested ?? lote.nombreProducto ?? '').toString();
+  }
+
+  getNombreGenerico(lote: LoteExtendida): string {
+    const fromNested = (lote as any)?.producto?.nombreGenerico;
+    return (fromNested ?? '').toString();
+  }
+
+  getCategoriaNombre(lote: LoteExtendida): string {
+    const fromNested = (lote as any)?.producto?.categoria?.nombre;
+    return (fromNested ?? lote.categoriaNombre ?? '').toString();
+  }
+
+  getNombreProveedor(lote: LoteExtendida): string {
+    const fromNested = (lote as any)?.detalleCompra?.compra?.proveedor?.razonSocial;
+    return (fromNested ?? lote.nombreProveedor ?? '').toString();
+  }
+
+  getNroFactura(lote: LoteExtendida): string {
+    const fromNested = (lote as any)?.detalleCompra?.compra?.nroFactura;
+    return (fromNested ?? lote.nroFactura ?? '').toString();
+  }
+
+  get lotesFiltrados(): LoteExtendida[] {
+    const texto = this.filtro.texto.trim().toLowerCase();
+    return this.lotes.filter(l => {
+      const matchTexto =
+        !texto ||
+        (l.codigoLote ?? '').toLowerCase().includes(texto) ||
+        this.getNombreProducto(l).toLowerCase().includes(texto) ||
+        this.getNombreGenerico(l).toLowerCase().includes(texto);
+
+      const etiqueta = this.obtenerEtiquetaEstado(l.diasRestantes);
+      const matchEstado = this.filtro.estado === 'TODOS' || etiqueta === this.filtro.estado;
+
+      const categoria = this.getCategoriaNombre(l);
+      const matchCategoria = this.filtro.categoria === 'TODAS' || categoria === this.filtro.categoria;
+
+      const proveedor = this.getNombreProveedor(l);
+      const matchProveedor = this.filtro.proveedor === 'TODOS' || proveedor === this.filtro.proveedor;
+
+      return matchTexto && matchEstado && matchCategoria && matchProveedor;
+    });
+  }
+
+  limpiarFiltros() {
+    this.filtro = { texto: '', estado: 'TODOS', categoria: 'TODAS', proveedor: 'TODOS' };
   }
 }

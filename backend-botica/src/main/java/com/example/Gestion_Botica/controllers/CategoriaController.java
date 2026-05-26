@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categorias")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4202")
 public class CategoriaController {
 
     @Autowired
@@ -17,5 +17,10 @@ public class CategoriaController {
     @GetMapping("/listar")
     public List<Categoria> listar() {
         return categoriaService.listarCategorias();
+    }
+
+    @PostMapping("/registro")
+    public Categoria registrar(@RequestBody Categoria categoria) {
+        return categoriaService.registrarCategoria(categoria);
     }
 }

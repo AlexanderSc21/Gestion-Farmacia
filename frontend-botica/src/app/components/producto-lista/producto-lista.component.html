@@ -1,46 +1,63 @@
-<div class="container mt-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Catálogo de Productos (Medicamentos)</h2>
-    <button class="btn btn-success" routerLink="/productos/nuevo">+ Registrar Producto</button>
+<div class="card shadow">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <h4 class="mb-0">Catálogo de Productos</h4>
+    <button type="button" class="btn btn-light btn-sm" (click)="nuevoProducto()">
+      <i class="bi bi-plus-circle"></i> Nuevo Producto
+    </button>
   </div>
-
-  <div class="table-responsive shadow rounded">
-    <table class="table table-striped table-hover align-middle mb-0">
-      <thead class="table-dark">
-        <tr>
-          <th>Imagen</th>
-          <th>Nombre Comercial</th>
-          <th>Nombre Genérico</th>
-          <th>Presentación</th>
-          <th>Categoría</th>
-          <th class="text-end">Precio Unitario</th>
-          <th class="text-center">Stock Mínimo</th>
-          <th class="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngIf="productos.length === 0">
-          <td colspan="8" class="text-center text-muted py-4">
-            No hay productos registrados en el catálogo.
-          </td>
-        </tr>
-
-        <tr *ngFor="let p of productos">
-          <td>
-            <img [src]="p.imagenUrl || 'assets/no-image.png'" alt="Producto" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
-          </td>
-          <td><strong>{{ p.nombreComercial }}</strong></td>
-          <td class="text-muted"><em>{{ p.nombreGenerico || 'N/A' }}</em></td>
-          <td><span class="badge bg-secondary">{{ p.presentacion }}</span></td>
-          <td>{{ p.categoria?.nombre }}</td>
-          <td class="text-end fw-bold text-success">{{ p.precioVentaUnitario | currency:'PEN':'S/. ' }}</td>
-          <td class="text-center">{{ p.stockMinimo || 0 }} u.</td>
-          <td class="text-center">
-            <button class="btn btn-sm btn-warning me-2" [routerLink]="['/productos/editar', p.producto_id]">Editar</button>
-            <button class="btn btn-sm btn-danger" (click)="eliminar(p.producto_id)">Eliminar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="card-body">
+    <div class="mb-4" *ngIf="mostrarFormulario">
+      <app-producto-registro
+        [embedded]="true"
+        [productoId]="productoEditId"
+        (saved)="onProductoGuardado()"
+        (cancelled)="cerrarFormulario()"
+      ></app-producto-registro>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Nombre Comercial</th>
+            <th>Nombre Genérico</th>
+            <th>Presentación</th>
+            <th>Categoría</th>
+            <th>Precio Venta</th>
+            <th>Stock Mín.</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of productos">
+            <td>{{ p.producto_id }}</td>
+            <td>
+              <div class="d-flex align-items-center">
+                <img [src]="p.imagenUrl || 'assets/placeholder.png'" class="rounded me-2" width="40" height="40" alt="img">
+                <strong>{{ p.nombreComercial }}</strong>
+              </div>
+            </td>
+            <td>{{ p.nombreGenerico }}</td>
+            <td>{{ p.presentacion }}</td>
+            <td><span class="badge bg-info text-dark">{{ p.categoria?.nombre || 'N/A' }}</span></td>
+            <td>{{ p.precioVentaUnitario | currency:'S/ ' }}</td>
+            <td>{{ p.stockMinimo }}</td>
+            <td class="text-center">
+              <div class="btn-group btn-group-sm">
+                <button type="button" (click)="editarProducto(p.producto_id!)" class="btn btn-outline-warning" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button (click)="eliminar(p.producto_id!)" class="btn btn-outline-danger" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="productos.length === 0">
+            <td colspan="8" class="text-center py-4">No se encontraron productos en el catálogo.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

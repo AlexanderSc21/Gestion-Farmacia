@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
-@CrossOrigin(origins = "http://localhost:4200") // Conexión directa con tu Angular
+@CrossOrigin(origins = "http://localhost:4202") // Conexión directa con tu Angular
 public class ProductoController {
 
     @Autowired

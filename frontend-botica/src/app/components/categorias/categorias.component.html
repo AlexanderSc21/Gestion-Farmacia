@@ -1,0 +1,49 @@
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Nueva Categoría</h5>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="registrar()">
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="nombre" [(ngModel)]="nuevaCategoria.nombre" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-control" name="descripcion" [(ngModel)]="nuevaCategoria.descripcion" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Registrar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Lista de Categorías</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cat of categorias">
+                <td>{{ cat.categoria_id }}</td>
+                <td><strong>{{ cat.nombre }}</strong></td>
+                <td>{{ cat.descripcion }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

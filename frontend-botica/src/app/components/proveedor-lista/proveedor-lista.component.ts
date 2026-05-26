@@ -1,50 +1,68 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { ProveedorService } from '../../services/proveedor.service';
+import { Proveedor } from '../../models/models';
+import { ProveedorRegistroComponent } from '../proveedor-registro/proveedor-registro.component';
 
 @Component({
   selector: 'app-proveedor-lista',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, ProveedorRegistroComponent],
   templateUrl: './proveedor-lista.component.html'
 })
 export class ProveedorListaComponent implements OnInit {
-  proveedores: any[] = []; // Directorio de proveedores
+  proveedores: Proveedor[] = [];
+  mostrarFormulario = false;
+  proveedorEditId?: number;
 
-  constructor(private http: HttpClient) {}
+  constructor(private proveedorService: ProveedorService) {}
 
   ngOnInit(): void {
     this.obtenerProveedores();
   }
 
   obtenerProveedores() {
-    this.http.get<any[]>('http://localhost:8080/api/proveedores/listar')
-      .subscribe({
-        next: (data) => this.proveedores = data,
-        error: (err) => console.error('Error al listar proveedores:', err)
-      });
+    this.proveedorService.listar().subscribe({
+      next: (data) => this.proveedores = data,
+      error: (err) => console.error('Error al listar proveedores:', err)
+    });
   }
 
-  // Método para dar de baja (desactivar)
+  nuevoProveedor() {
+    this.proveedorEditId = undefined;
+    this.mostrarFormulario = true;
+  }
+
+  editarProveedor(id: number) {
+    this.proveedorEditId = id;
+    this.mostrarFormulario = true;
+  }
+
+  cerrarFormulario() {
+    this.mostrarFormulario = false;
+    this.proveedorEditId = undefined;
+  }
+
+  onProveedorGuardado() {
+    this.cerrarFormulario();
+    this.obtenerProveedores();
+  }
+
   darDeBaja(id: number) {
     if (confirm('¿Estás seguro de que deseas dar de baja a este proveedor?')) {
-      this.http.patch(`http://localhost:8080/api/proveedores/desactivar/${id}`, {})
-        .subscribe(() => {
-          alert('Proveedor desactivado correctamente');
-          this.obtenerProveedores(); // Refrescamos la tabla
-        });
+      this.proveedorService.desactivar(id).subscribe(() => {
+        alert('Proveedor desactivado correctamente');
+        this.obtenerProveedores();
+      });
     }
   }
 
-  // Método para reactivar
   activar(id: number) {
     if (confirm('¿Deseas reactivar este proveedor para futuras compras?')) {
-      this.http.patch(`http://localhost:8080/api/proveedores/activar/${id}`, {})
-        .subscribe(() => {
-          alert('Proveedor reactivado con éxito');
-          this.obtenerProveedores(); // Refrescamos la tabla
-        });
+      this.proveedorService.activar(id).subscribe(() => {
+        alert('Proveedor reactivado con éxito');
+        this.obtenerProveedores();
+      });
     }
   }
 }

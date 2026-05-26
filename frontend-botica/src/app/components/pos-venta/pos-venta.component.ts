@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { LoteService } from '../../services/lote.service';
+import { VentaService } from '../../services/venta.service';
+import { Lote, Venta, DetalleVenta } from '../../models/models';
 
 @Component({
   selector: 'app-pos-venta',
@@ -9,17 +11,24 @@ import { HttpClient } from '@angular/common/http';
   imports: [CommonModule, FormsModule],
   templateUrl: './pos-venta.component.html',
   styles: [`
-    .product-card { transition: transform 0.2s; }
+    .product-card { transition: transform 0.2s; cursor: pointer; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    .img-catalogo { height: 180px; object-fit: contain; padding: 10px; }
+    .img-catalogo { height: 120px; object-fit: contain; padding: 10px; }
+    .cart-container { height: calc(100vh - 250px); overflow-y: auto; }
   `]
 })
 export class PosVentaComponent implements OnInit {
   lotesDisponibles: any[] = [];
   categoriasUnicas: string[] = [];
-  ticketActual: any = null;
+  ticketActual: Venta | null = null;
+  ticketImpresion: {
+    fecha: Date;
+    nroComprobante: string;
+    metodoPago: string;
+    total: number;
+    items: Array<{ nombreProducto: string; cantidad: number; precioUnitario: number; subtotal: number }>;
+  } | null = null;
   
-  // Filtros
   categoriaSeleccionada: string = 'TODAS';
   terminoBusqueda: string = '';
 
@@ -31,29 +40,36 @@ export class PosVentaComponent implements OnInit {
     total: 0
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private loteService: LoteService,
+    private ventaService: VentaService
+  ) {}
 
   ngOnInit(): void {
     this.cargarLotes();
   }
 
   cargarLotes() {
-    this.http.get<any[]>('http://localhost:8080/api/lotes/listar').subscribe(data => {
+    this.loteService.listar().subscribe(data => {
       this.lotesDisponibles = data.filter(lote => lote.cantidadActual > 0);
-      
-      // Extraer categorías sin repetir para el menú lateral
-      const cats = this.lotesDisponibles.map(l => l.categoriaNombre).filter(Boolean);
+      const cats = this.lotesDisponibles.map(l => l.producto?.categoria?.nombre).filter(Boolean);
       this.categoriasUnicas = [...new Set(cats)];
     });
   }
 
-  // Getter dinámico que filtra en tiempo real lo que se ve en pantalla
   get lotesFiltrados() {
     return this.lotesDisponibles.filter(lote => {
-      const matchCat = this.categoriaSeleccionada === 'TODAS' || lote.categoriaNombre === this.categoriaSeleccionada;
-      const matchNom = lote.nombreProducto.toLowerCase().includes(this.terminoBusqueda.toLowerCase());
+      const matchCat = this.categoriaSeleccionada === 'TODAS' || lote.producto?.categoria?.nombre === this.categoriaSeleccionada;
+      const matchNom = lote.producto?.nombreComercial.toLowerCase().includes(this.terminoBusqueda.toLowerCase()) || 
+                       lote.producto?.nombreGenerico.toLowerCase().includes(this.terminoBusqueda.toLowerCase());
       return matchCat && matchNom;
     });
+  }
+
+  get sugerencias() {
+    const term = this.terminoBusqueda.trim().toLowerCase();
+    if (term.length < 2) return [];
+    return this.lotesFiltrados.slice(0, 8);
   }
 
   agregarAlCarrito(lote: any) {
@@ -61,7 +77,7 @@ export class PosVentaComponent implements OnInit {
 
     if (itemExistente) {
       if ((itemExistente.cantidad + 1) > lote.cantidadActual) {
-        alert(`Stock físico insuficiente. Solo hay ${lote.cantidadActual} cajas.`);
+        alert(`Stock insuficiente. Solo hay ${lote.cantidadActual} disponibles.`);
         return;
       }
       itemExistente.cantidad++;
@@ -69,12 +85,12 @@ export class PosVentaComponent implements OnInit {
     } else {
       this.carrito.push({
         loteId: lote.lote_id,
-        nombreProducto: lote.nombreProducto,
+        nombreProducto: lote.producto.nombreComercial,
         codigoLote: lote.codigoLote,
-        cantidad: 1, // Por defecto agrega 1 al hacer clic
-        precioUnitario: lote.precioVenta,
-        subtotal: lote.precioVenta,
-        imagen: lote.imagenUrl
+        cantidad: 1,
+        precioUnitario: lote.producto.precioVentaUnitario,
+        subtotal: lote.producto.precioVentaUnitario,
+        imagen: lote.producto.imagenUrl
       });
     }
     this.calcularTotal();
@@ -99,22 +115,35 @@ export class PosVentaComponent implements OnInit {
     }
   }
 
-  quitarItem(index: number) {
+  eliminarDelCarrito(index: number) {
     this.carrito.splice(index, 1);
     this.calcularTotal();
   }
 
   calcularTotal() {
-    this.venta.total = this.carrito.reduce((acc, item) => acc + item.subtotal, 0);
+    this.venta.total = this.carrito.reduce((sum, item) => sum + item.subtotal, 0);
   }
 
-  registrarVenta() {
-    if (this.carrito.length === 0) return alert('El carrito está vacío.');
+  finalizarVenta() {
+    if (this.carrito.length === 0) return;
 
-    const payload = {
-      usuarioId: this.venta.usuarioId,
+    const ticketSnapshot = {
+      fecha: new Date(),
       nroComprobante: this.venta.nroComprobante,
       metodoPago: this.venta.metodoPago,
+      total: this.venta.total,
+      items: this.carrito.map(item => ({
+        nombreProducto: item.nombreProducto,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        subtotal: item.subtotal
+      }))
+    };
+
+    const ventaRequest = {
+      usuarioId: this.venta.usuarioId,
+      metodoPago: this.venta.metodoPago,
+      nroComprobante: this.venta.nroComprobante,
       total: this.venta.total,
       detalles: this.carrito.map(item => ({
         loteId: item.loteId,
@@ -123,35 +152,60 @@ export class PosVentaComponent implements OnInit {
       }))
     };
 
-    this.http.post('http://localhost:8080/api/ventas/registrar', payload).subscribe({
-      next: () => {
-        // 1. CAPTURAMOS LOS DATOS PARA EL TICKET (Antes de borrar el carrito)
-        this.ticketActual = {
-          empresa: 'BOTICA EL BUEN SALUD', // Nombre ficticio de tu botica
-          ruc: '20123456789',
-          nroComprobante: this.venta.nroComprobante,
-          fecha: new Date(),
-          metodoPago: this.venta.metodoPago,
-          total: this.venta.total,
-          items: [...this.carrito] // Hacemos una copia exacta del carrito
-        };
-
-        // 2. Limpiamos la pantalla de la caja para el siguiente cliente en la fila
+    this.ventaService.registrar(ventaRequest).subscribe({
+      next: (res) => {
+        alert('Venta realizada con éxito');
+        this.ticketActual = res;
+        this.ticketImpresion = ticketSnapshot;
         this.carrito = [];
-        this.calcularTotal();
+        this.venta.total = 0;
         this.venta.nroComprobante = 'B001-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-        this.cargarLotes(); // Refrescamos el stock
+        this.cargarLotes();
       },
-      error: (err) => alert('Error al registrar venta.')
+      error: (err) => alert('Error al procesar la venta: ' + err.message)
     });
   }
 
-  // --- NUEVAS FUNCIONES PARA EL TICKET ---
-  imprimirTicket() {
-    window.print(); // Comando nativo del navegador web para invocar la impresora
+  seleccionarSugerencia(lote: any) {
+    this.agregarAlCarrito(lote);
+    this.terminoBusqueda = '';
   }
 
-  cerrarTicket() {
-    this.ticketActual = null; // Cierra el modal y deja la caja lista
+  imprimirTicket() {
+    if (!this.ticketImpresion) return;
+    const ticketEl = document.getElementById('ticket-print');
+    if (!ticketEl) return;
+
+    const win = window.open('', '_blank', 'width=400,height=700');
+    if (!win) return;
+
+    win.document.open();
+    win.document.write(`
+      <html>
+        <head>
+          <title>${this.ticketImpresion.nroComprobante}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 12px; }
+            .ticket { width: 280px; margin: 0 auto; }
+            .center { text-align: center; }
+            .row { display: flex; justify-content: space-between; gap: 8px; }
+            .muted { color: #555; font-size: 12px; }
+            .line { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { padding: 4px 0; }
+            th { text-align: left; }
+            td.r, th.r { text-align: right; }
+            .total { font-size: 14px; font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          ${ticketEl.innerHTML}
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
+    win.close();
   }
 }
