@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 public class LoteResponse {
     private Integer lote_id;
+    private Integer productoId;
     private String codigoLote;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -17,6 +18,7 @@ public class LoteResponse {
     
     private Integer cantidadActual;
     
+    private String nombreGenerico;
     private String nombreProducto;
     private String presentacionProducto;
     private String nroFactura;
@@ -29,6 +31,9 @@ public class LoteResponse {
     public Integer getLote_id() { return lote_id; }
     public void setLote_id(Integer lote_id) { this.lote_id = lote_id; }
 
+    public Integer getProductoId() { return productoId; }
+    public void setProductoId(Integer productoId) { this.productoId = productoId; }
+
     public String getCodigoLote() { return codigoLote; }
     public void setCodigoLote(String codigoLote) { this.codigoLote = codigoLote; }
 
@@ -40,6 +45,9 @@ public class LoteResponse {
 
     public Integer getCantidadActual() { return cantidadActual; }
     public void setCantidadActual(Integer cantidadActual) { this.cantidadActual = cantidadActual; }
+
+    public String getNombreGenerico() { return nombreGenerico; }
+    public void setNombreGenerico(String nombreGenerico) { this.nombreGenerico = nombreGenerico; }
 
     public String getNombreProducto() { return nombreProducto; }
     public void setNombreProducto(String nombreProducto) { this.nombreProducto = nombreProducto; }

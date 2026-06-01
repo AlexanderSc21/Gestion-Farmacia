@@ -25,10 +25,10 @@
                   (click)="seleccionarSugerencia(s)"
                 >
                   <div class="text-start">
-                    <div class="fw-bold">{{ s.producto?.nombreComercial }}</div>
-                    <div class="small text-muted">{{ s.producto?.nombreGenerico }}</div>
+                    <div class="fw-bold">{{ s.nombreComercial }}</div>
+                    <div class="small text-muted">{{ s.nombreGenerico || '—' }}</div>
                   </div>
-                  <span class="badge bg-secondary">Stock: {{ s.cantidadActual }}</span>
+                  <span class="badge bg-secondary">Stock: {{ s.stockTotal }}</span>
                 </button>
               </div>
             </div>
@@ -37,17 +37,17 @@
       </div>
       <div class="card-body bg-light overflow-auto catalog-scroll">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
-          <div class="col" *ngFor="let lote of lotesFiltrados">
-            <div class="card h-100 product-card border-0 shadow-sm" (click)="agregarAlCarrito(lote)">
-              <img [src]="lote.producto.imagenUrl || 'assets/placeholder.png'" class="card-img-top img-catalogo" alt="img">
+          <div class="col" *ngFor="let producto of productosFiltrados">
+            <div class="card h-100 product-card border-0 shadow-sm" [class.product-disabled]="producto.stockTotal <= 0" (click)="agregarAlCarrito(producto)">
+              <img [src]="producto.imagenUrl || 'assets/placeholder.png'" class="card-img-top img-catalogo" alt="img">
               <div class="card-body">
-                <h6 class="card-title text-primary mb-1">{{ lote.producto.nombreComercial }}</h6>
-                <p class="card-text small text-muted mb-2">{{ lote.producto.nombreGenerico }}</p>
+                <h6 class="card-title text-primary mb-1">{{ producto.nombreComercial }}</h6>
+                <p class="card-text small text-muted mb-2">{{ producto.nombreGenerico || '—' }}</p>
                 <div class="d-flex justify-content-between align-items-center">
-                  <span class="h5 mb-0 text-success">{{ lote.producto.precioVentaUnitario | currency:'S/ ' }}</span>
-                  <span class="badge bg-secondary">Stock: {{ lote.cantidadActual }}</span>
+                  <span class="h5 mb-0 text-success">{{ producto.precioVentaUnitario | currency:'S/ ' }}</span>
+                  <span class="badge bg-secondary">Stock: {{ producto.stockTotal }}</span>
                 </div>
-                <small class="text-muted d-block mt-2">Lote: {{ lote.codigoLote }}</small>
+                <small class="text-muted d-block mt-2">{{ producto.presentacion }}</small>
               </div>
             </div>
           </div>
@@ -89,7 +89,14 @@
         <div class="p-3 border-top bg-light mt-auto">
           <div *ngIf="ticketImpresion" class="alert alert-success py-2 small d-flex justify-content-between align-items-center">
             <span>Comprobante listo: <strong>{{ ticketImpresion.nroComprobante }}</strong></span>
-            <button type="button" class="btn btn-sm btn-outline-success" (click)="imprimirTicket()">Imprimir / PDF</button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-success" (click)="previsualizarBoletaPdf()" [disabled]="generandoPdf">
+                {{ generandoPdf ? 'Generando...' : 'Ver PDF' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-success" (click)="descargarBoletaPdf()" [disabled]="generandoPdf">
+                Descargar PDF
+              </button>
+            </div>
           </div>
           <div class="d-flex justify-content-between mb-2">
             <span>Comprobante:</span>
