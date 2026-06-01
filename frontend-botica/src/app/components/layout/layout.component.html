@@ -1,14 +1,14 @@
 <div class="wrapper">
   <!-- Sidebar -->
-  <nav id="sidebar" [class.active]="isSidebarCollapsed">
-    <div class="sidebar-header d-flex flex-column p-3">
-      <h3 class="fw-bold mb-0">Botica</h3>
-      <small class="opacity-50">BT</small>
-    </div>
+  <nav id="sidebar" [class.open]="isSidebarOpen" [class.closed]="!isSidebarOpen">
+    <a class="sidebar-header d-flex flex-column p-3" routerLink="/dashboard" [queryParams]="{ mode: 'bienvenida' }">
+      <h3 class="fw-bold mb-0">Botica Nuevo Perú</h3>
+      <small class="opacity-50">BNP</small>
+    </a>
 
     <ul class="list-unstyled components">
       <li>
-        <a routerLink="/dashboard" routerLinkActive="active">
+        <a routerLink="/dashboard" [queryParams]="{ mode: 'bienvenida' }" routerLinkActive="active">
           <i class="bi bi-speedometer2"></i>
           <span>Inicio / Bienvenida</span>
         </a>
@@ -78,33 +78,52 @@
     </ul>
   </nav>
 
+  <div class="sidebar-backdrop" [class.show]="isSidebarOpen" (click)="closeSidebar()"></div>
+
   <!-- Page Content -->
   <div id="content">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm topbar">
       <div class="container-fluid">
-        <button type="button" id="sidebarCollapse" class="btn btn-info me-3" (click)="toggleSidebar()">
+        <button
+          type="button"
+          id="sidebarCollapse"
+          class="btn sidebar-toggle-btn"
+          (click)="toggleSidebar()"
+          aria-label="Abrir menú"
+        >
           <i class="bi bi-list"></i>
         </button>
 
-        <!-- Botones de Auth en el NAV (Cuando NO hay sesión) -->
-        <div class="d-flex gap-2" *ngIf="!(usuario$ | async)">
-          <button class="btn btn-primary d-flex align-items-center" (click)="authMode = 'login'">
-            <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+        <div class="ms-auto d-flex align-items-center gap-2 topbar-actions">
+          <button
+            type="button"
+            class="btn theme-toggle-btn"
+            (click)="toggleTheme()"
+            [attr.aria-label]="isDarkMode ? 'Cambiar a modo día' : 'Cambiar a modo noche'"
+            [attr.title]="isDarkMode ? 'Modo día' : 'Modo noche'"
+          >
+            <i class="bi" [ngClass]="isDarkMode ? 'bi-sun' : 'bi-moon-stars'"></i>
           </button>
-          <button class="btn btn-outline-success d-flex align-items-center" (click)="authMode = 'register'">
-            <i class="bi bi-person-plus me-2"></i> Crear Cuenta
-          </button>
-        </div>
 
-        <div class="ms-auto d-flex align-items-center" *ngIf="usuario$ | async as user">
-          <span class="navbar-text me-3 text-dark d-flex align-items-center">
-            <i class="bi bi-person-circle fs-5 me-2"></i>
-            <span class="fw-bold me-1">{{ user.nombre_completo }}</span>
-            <span class="badge bg-secondary text-uppercase" style="font-size: 0.65em; letter-spacing: 0.5px;">{{ user.rol?.nombre }}</span>
-          </span>
-          <button class="btn btn-outline-danger btn-sm px-3 border-secondary-subtle" (click)="logout()">
-            <i class="bi bi-box-arrow-right me-1"></i> Salir
-          </button>
+          <ng-container *ngIf="usuario$ | async as user; else loggedOutActions">
+            <span class="navbar-text d-flex align-items-center user-badge">
+              <i class="bi bi-person-circle fs-5 me-2"></i>
+              <span class="fw-bold me-1">{{ user.nombre_completo }}</span>
+              <span class="badge bg-secondary text-uppercase role-badge">{{ user.rol?.nombre }}</span>
+            </span>
+            <button class="btn btn-outline-danger btn-sm px-3 border-secondary-subtle" (click)="logout()">
+              <i class="bi bi-box-arrow-right me-1"></i> Salir
+            </button>
+          </ng-container>
+
+          <ng-template #loggedOutActions>
+            <button class="btn btn-primary d-flex align-items-center" (click)="authMode = 'login'">
+              <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+            </button>
+            <button class="btn btn-outline-success d-flex align-items-center" (click)="authMode = 'register'">
+              <i class="bi bi-person-plus me-2"></i> Crear Cuenta
+            </button>
+          </ng-template>
         </div>
       </div>
     </nav>
@@ -117,7 +136,7 @@
         <div *ngIf="authMode === 'login'" class="p-4">
           <div class="text-center mb-4">
             <i class="bi bi-capsule-pill text-primary display-4 mb-2"></i>
-            <h4 class="fw-bold mb-1">Sistema Botica</h4>
+            <h4 class="fw-bold mb-1">Sistema Botica Nuevo Perú</h4>
             <p class="text-muted small">Acceso al personal</p>
           </div>
           <form (ngSubmit)="onLogin()">
@@ -171,7 +190,7 @@
       </div>
     </div>
 
-    <div class="container-fluid p-4">
+    <div class="page-container">
       <router-outlet></router-outlet>
     </div>
   </div>

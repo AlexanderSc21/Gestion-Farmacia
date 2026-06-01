@@ -13,8 +13,9 @@ import { Usuario } from '../../models/models';
   styleUrls: ['./layout.component.css']
 })
 export class LayoutComponent {
-  isSidebarCollapsed = false;
+  isSidebarOpen = true;
   usuario$ = this.authService.user$;
+  isDarkMode = false;
 
   readonly ROLE_ADMIN = 1;
   readonly ROLE_VENDEDOR = 2;
@@ -32,13 +33,40 @@ export class LayoutComponent {
   error = '';
 
   constructor(private authService: AuthService) {
+    if (typeof window !== 'undefined') {
+      this.isSidebarOpen = !window.matchMedia('(max-width: 768px)').matches;
+      const savedTheme = localStorage.getItem('botica_theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        this.isDarkMode = savedTheme === 'dark';
+      } else {
+        this.isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      this.applyTheme(this.isDarkMode);
+    }
     this.authService.user$.subscribe(user => {
       if (user) this.authMode = 'none';
     });
   }
 
   toggleSidebar() {
-    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar() {
+    this.isSidebarOpen = false;
+  }
+
+  toggleTheme() {
+    this.isDarkMode = !this.isDarkMode;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('botica_theme', this.isDarkMode ? 'dark' : 'light');
+    }
+    this.applyTheme(this.isDarkMode);
+  }
+
+  private applyTheme(isDark: boolean) {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('theme-dark', isDark);
   }
 
   tieneRol(user: Usuario, roles: Array<string | number>): boolean {

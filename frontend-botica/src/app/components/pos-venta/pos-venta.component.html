@@ -35,7 +35,7 @@
           </div>
         </div>
       </div>
-      <div class="card-body bg-light overflow-auto" style="max-height: calc(100vh - 200px);">
+      <div class="card-body bg-light overflow-auto catalog-scroll">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
           <div class="col" *ngFor="let lote of lotesFiltrados">
             <div class="card h-100 product-card border-0 shadow-sm" (click)="agregarAlCarrito(lote)">
@@ -120,7 +120,7 @@
   <div id="ticket-print" class="ticket">
     <div class="ticket">
       <div class="center">
-        <div class="fw-bold">Farmacia & Botica "Salud Total"</div>
+        <div class="fw-bold">Botica Nuevo Perú</div>
         <div class="muted">Comprobante de Venta</div>
       </div>
       <div class="line"></div>

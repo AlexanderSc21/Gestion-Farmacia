@@ -26,22 +26,16 @@
       </div>
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let cat of categorias">
-                <td>{{ cat.categoria_id }}</td>
-                <td><strong>{{ cat.nombre }}</strong></td>
-                <td>{{ cat.descripcion }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="list-group list-group-flush category-list">
+            <div class="list-group-item d-flex align-items-center justify-content-between gap-3 py-3" *ngFor="let cat of categorias">
+              <span class="category-pill">{{ cat.nombre }}</span>
+              <span class="text-muted small flex-grow-1 text-truncate">{{ cat.descripcion || '—' }}</span>
+              <span class="text-muted small">#{{ cat.categoria_id }}</span>
+            </div>
+            <div class="list-group-item text-center text-muted py-4" *ngIf="categorias.length === 0">
+              No hay categorías registradas.
+            </div>
+          </div>
         </div>
       </div>
     </div>

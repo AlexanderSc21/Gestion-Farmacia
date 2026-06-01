@@ -10,12 +10,7 @@ import { Lote, Venta, DetalleVenta } from '../../models/models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './pos-venta.component.html',
-  styles: [`
-    .product-card { transition: transform 0.2s; cursor: pointer; }
-    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    .img-catalogo { height: 120px; object-fit: contain; padding: 10px; }
-    .cart-container { height: calc(100vh - 250px); overflow-y: auto; }
-  `]
+  styleUrls: ['./pos-venta.component.css']
 })
 export class PosVentaComponent implements OnInit {
   lotesDisponibles: any[] = [];
